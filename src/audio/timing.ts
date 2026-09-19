@@ -73,10 +73,11 @@ export const locate = (
 export const deriveWindows = (
   narrations: string[],
   words: WordTiming[],
+  duration?: number,
 ): SceneWindow[] => {
   if (words.length === 0) return narrations.map(() => ({ startSec: 0, endSec: 0 }));
 
-  const audioEnd = words[words.length - 1].end;
+  const audioEnd = duration ?? words[words.length - 1].end;
   const out: SceneWindow[] = [];
   let cursor = 0;
   let lastEnd = 0;

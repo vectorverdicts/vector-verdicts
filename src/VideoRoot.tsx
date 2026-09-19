@@ -64,14 +64,50 @@ const sceneSchema = z.discriminatedUnion('kind', [
     items: z.array(z.string()).min(1).max(8),
   }),
   z.object({
-    kind: z.literal('outro'),
-    seconds: z.number().positive(),
-    narration: z.string().optional(),
-    /** Animated background for this scene. Defaults per scene type. */
-    background: z.enum(['aurora','orb','halo','wave','mesh','aperture']).optional(),
-    message: z.string(),
-  }),
-]);
+      kind: z.literal('outro'),
+      seconds: z.number().positive(),
+      narration: z.string().optional(),
+      /** Animated background for this scene. Defaults per scene type. */
+      background: z.enum(['aurora','orb','halo','wave','mesh','aperture']).optional(),
+      message: z.string(),
+    }),
+    z.object({
+      kind: z.literal('terminal'),
+      seconds: z.number().positive(),
+      narration: z.string().optional(),
+      background: z.enum(['aurora','orb','halo','wave','mesh','aperture']).optional(),
+      /** Big title overlay above the terminal, e.g. "108-YEAR-OLD CIPHER". */
+      title: z.string().optional(),
+      /** 'green' (default) or 'amber' terminal accent. */
+      accent: z.enum(['green','amber']).optional(),
+    }),
+    z.object({
+      kind: z.literal('grid'),
+      seconds: z.number().positive(),
+      narration: z.string().optional(),
+      background: z.enum(['aurora','orb','halo','wave','mesh','aperture']).optional(),
+      heading: z.string().optional(),
+    }),
+    z.object({
+      kind: z.literal('mapzoom'),
+      seconds: z.number().positive(),
+      narration: z.string().optional(),
+      background: z.enum(['aurora','orb','halo','wave','mesh','aperture']).optional(),
+      /** Path relative to public/, e.g. "images/ep003-map.jpg". */
+      src: z.string(),
+      caption: z.string().optional(),
+      /** Zoom target as % of image (0-100). Defaults to center. */
+      targetX: z.number().optional(),
+      targetY: z.number().optional(),
+    }),
+    z.object({
+      kind: z.literal('glitch'),
+      seconds: z.number().positive(),
+      narration: z.string().optional(),
+      background: z.enum(['aurora','orb','halo','wave','mesh','aperture']).optional(),
+      message: z.string().optional(),
+    }),
+  ]);
 
 const wordSchema = z.object({
   word: z.string(),
@@ -87,6 +123,10 @@ export const videoSchema = z.object({
   /** Word-level timings from whisper. When present, these drive scene
    *  boundaries and `seconds` is ignored. */
   words: z.array(wordSchema).optional(),
+  /** Optional total duration in seconds. Overrides the words-derived
+   *  duration so a scene can run past the last word (e.g. a glitch outro
+   *  or a held end card). */
+  duration: z.number().positive().optional(),
 });
 
 export type VideoProps = z.infer<typeof videoSchema>;
@@ -138,13 +178,13 @@ export const defaultVideoProps: VideoProps = {
 };
 
 
-export const VideoRoot: React.FC<VideoProps> = ({ scenes, audioSrc, words }) => {
+export const VideoRoot: React.FC<VideoProps> = ({ scenes, audioSrc, words, duration }) => {
   const { fps } = useVideoConfig();
 
   // Derived timing when whisper output is present; authored seconds otherwise.
   const windows = words?.length
-    ? deriveWindows(scenes.map((s) => s.narration ?? ''), words)
-    : null;
+      ? deriveWindows(scenes.map((s) => s.narration ?? ''), words, duration)
+      : null;
 
   let cursor = 0;
 
@@ -186,7 +226,9 @@ export const totalFrames = (
   scenes: Scene[],
   fps: number,
   words?: { word: string; start: number; end: number }[],
+  duration?: number,
 ): number => {
+  if (duration) return Math.round(duration * fps);
   if (words?.length) {
     const w = deriveWindows(scenes.map((s) => s.narration ?? ''), words);
     return Math.round(w[w.length - 1].endSec * fps);

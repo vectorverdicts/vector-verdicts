@@ -6,6 +6,7 @@ import { monoFamily } from '../brand/fonts';
 import type { Scene } from '../VideoRoot';
 import { Logo } from '../brand/Logo';
 import { ImageScene } from './ImageScene';
+import { CinematicScenes } from './Cinematic';
 import { Background, type BackgroundKind } from '../brand/backgrounds';
 
 /** A scene's chosen background, falling back to the default for its type. */
@@ -300,6 +301,10 @@ export const SceneRenderer: React.FC<{ scene: Scene }> = ({ scene }) => {
     case 'bullets': return <BulletsScene s={scene} />;
     case 'specs': return <SpecsScene s={scene} />;
     case 'image': return <ImageScene s={scene} />;
-    case 'outro': return <OutroScene s={scene} />;
+        case 'outro': return <OutroScene s={scene} />;
+        case 'terminal':
+        case 'grid':
+        case 'mapzoom':
+        case 'glitch': return <CinematicScenes scene={scene} />;
   }
 };
