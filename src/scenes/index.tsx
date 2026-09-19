@@ -43,7 +43,7 @@ const TitleScene: React.FC<{ s: Extract<Scene, { kind: 'title' }> }> = ({ s }) =
   const head = useEntrance(6);
   const sub = useEntrance(14);
   return (
-    <Frame>
+    <Frame backdrop>
       {s.eyebrow ? <Eyebrow>{s.eyebrow}</Eyebrow> : null}
       <div style={{ ...head, fontSize: t.hero, fontWeight: t.weight.bold,
         letterSpacing: t.tracking.display, lineHeight: t.lineHeight.display }}>
@@ -112,7 +112,7 @@ const OutroScene: React.FC<{ s: Extract<Scene, { kind: 'outro' }> }> = ({ s }) =
   const scale = interpolate(pop, [0, 1], [0.86, 1], { extrapolateRight: 'clamp' });
 
   return (
-    <Frame>
+    <Frame backdrop>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <div style={{ ...anim, transform: `${anim.transform} scale(${scale})` }}>
           <Logo scale={0.5} />
