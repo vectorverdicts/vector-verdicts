@@ -24,3 +24,4 @@ public/audio/
 
 # Per-episode images (supplied alongside the script)
 public/images/
+out/

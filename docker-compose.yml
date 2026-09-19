@@ -1,0 +1,26 @@
+services:
+  studio:
+    build:
+      context: .
+      dockerfile: Dockerfile.studio
+    container_name: vv-studio
+    user: "1000:1000"
+    working_dir: /app
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - vv-node-modules:/app/node_modules
+    shm_size: 1gb
+    mem_limit: 3g
+    environment:
+      - NPM_CONFIG_CACHE=/app/node_modules/.npm-cache
+    command: >
+      sh -c "if [ ! -d node_modules/remotion ]; then
+               if [ -f package-lock.json ]; then npm ci; else npm install; fi;
+             fi &&
+             npx remotion browser ensure &&
+             npx remotion studio --ipv4 --port 3000"
+
+volumes:
+  vv-node-modules:
