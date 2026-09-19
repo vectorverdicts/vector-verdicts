@@ -66,15 +66,35 @@ const TitleScene: React.FC<{ s: Extract<Scene, { kind: 'title' }> }> = ({ s }) =
   );
 };
 
+/**
+ * Counts a numeric value up from zero, preserving any suffix or prefix.
+ * "2.4x" -> counts 0.0..2.4 then appends "x". Decimal places are taken from
+ * the source string, so "150" counts in whole numbers and "2.4" in tenths.
+ */
+const useCountUp = (value: string, delay: number, frames: number) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const m = value.match(/^([^0-9.-]*)(-?[\d,]*\.?\d+)(.*)$/);
+  if (!m) return { text: value, progress: 1 };
+  const [, prefix, numStr, suffix] = m;
+  const target = parseFloat(numStr.replace(/,/g, ''));
+  const dp = numStr.includes('.') ? numStr.split('.')[1].length : 0;
+  const p = spring({ frame: frame - delay, fps,
+    durationInFrames: frames, config: { damping: 200 } });
+  const shown = (target * p).toFixed(dp);
+  return { text: prefix + shown + suffix, progress: p };
+};
+
 const StatScene: React.FC<{ s: Extract<Scene, { kind: 'stat' }> }> = ({ s }) => {
   const val = useEntrance(4);
   const lab = useEntrance(12);
+  const count = useCountUp(s.value, 4, 26);
   return (
     <Frame backdrop backgroundKind={bgOf(s, 'halo')}>
       <div style={{ ...val, fontSize: 168, fontWeight: t.weight.bold,
         color: colors.accentBlue, letterSpacing: t.tracking.display,
-        lineHeight: 1, textShadow: glow(colors.accentBlue, 0.6) }}>
-        {s.value}
+        lineHeight: 1, textShadow: glow(colors.accentBlue, 0.4 + 0.5 * count.progress) }}>
+        {count.text}
       </div>
       <div style={{ ...lab, fontSize: t.h2, marginTop: space.md }}>{s.label}</div>
       {s.source ? (
@@ -87,6 +107,30 @@ const StatScene: React.FC<{ s: Extract<Scene, { kind: 'stat' }> }> = ({ s }) => 
   );
 };
 
+/**
+ * A ring that fills, then draws a tick. strokeDashoffset animated from the
+ * path length to zero is what makes the stroke appear to draw itself.
+ */
+const Check: React.FC<{ color: string; delay: number }> = ({ color, delay }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const p = spring({ frame: frame - delay, fps, config: { damping: 200 } });
+  const draw = spring({ frame: frame - delay - 5, fps,
+    durationInFrames: 14, config: { damping: 200 } });
+  const LEN = 20;
+  return (
+    <svg width={34} height={34} viewBox="0 0 34 34"
+      style={{ marginTop: 10, flexShrink: 0, filter: `drop-shadow(0 0 6px ${color})` }}>
+      <circle cx={17} cy={17} r={15} fill="none" stroke={color} strokeWidth={2.5}
+        opacity={0.35 + 0.65 * p} />
+      <circle cx={17} cy={17} r={15 * p} fill={color} opacity={0.18} />
+      <path d="M10 17.5 L15 22.5 L24 12" fill="none" stroke={color}
+        strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"
+        strokeDasharray={LEN} strokeDashoffset={LEN * (1 - draw)} />
+    </svg>
+  );
+};
+
 /** Own component so useEntrance is a top-level hook, not a hook in a loop. */
 const BulletRow: React.FC<{ text: string; index: number }> = ({ text, index }) => {
   const anim = useEntrance(8 + index * 9);
@@ -94,8 +138,7 @@ const BulletRow: React.FC<{ text: string; index: number }> = ({ text, index }) =
   return (
     <div style={{ ...anim, display: 'flex', alignItems: 'flex-start',
       gap: space.md, marginBottom: space.lg }}>
-      <div style={{ width: 14, height: 14, borderRadius: 7, marginTop: 16,
-        flexShrink: 0, backgroundColor: dot, boxShadow: glow(dot, 0.4) }} />
+      <Check color={dot} delay={8 + index * 9} />
       <div style={{ fontSize: t.h3, fontWeight: t.weight.medium }}>{text}</div>
     </div>
   );
