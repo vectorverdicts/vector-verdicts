@@ -25,8 +25,21 @@ export const Backdrop: React.FC<{ opacity?: number }> = ({ opacity = 0.2 }) => {
   // Oversized so the drift never exposes an edge.
   const zoom = 1.12 + 0.03 * Math.sin((frame / fps) * 0.22);
 
+  // Two soft blooms on sine paths with different periods, so the pair never
+  // settles into a visible loop. Sits BENEATH the constellation for depth.
+  const t = frame / fps;
+  const blueX = 30 + 18 * Math.sin(t * 0.13);
+  const blueY = 28 + 14 * Math.cos(t * 0.09);
+  const orangeX = 72 + 16 * Math.sin(t * 0.11 + 2.1);
+  const orangeY = 68 + 12 * Math.cos(t * 0.15 + 1.3);
+
   return (
     <AbsoluteFill style={{ backgroundColor: colors.bg }}>
+      <AbsoluteFill style={{
+        background:
+          `radial-gradient(60% 45% at ${blueX}% ${blueY}%, rgba(16,192,254,0.30) 0%, rgba(16,192,254,0) 68%),` +
+          `radial-gradient(55% 42% at ${orangeX}% ${orangeY}%, rgba(255,88,35,0.22) 0%, rgba(255,88,35,0) 65%)`,
+      }} />
       <Img
         src={staticFile('bg-constellation.jpg')}
         onLoad={done}
