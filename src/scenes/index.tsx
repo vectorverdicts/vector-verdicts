@@ -115,7 +115,7 @@ const OutroScene: React.FC<{ s: Extract<Scene, { kind: 'outro' }> }> = ({ s }) =
     <Frame backdrop>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <div style={{ ...anim, transform: `${anim.transform} scale(${scale})` }}>
-          <Logo scale={0.5} />
+          <Logo scale={0.44} variant="mark" />
         </div>
         <div style={{ height: 4, width: 120, marginTop: space.md,
           background: `linear-gradient(90deg, ${colors.accentBlue}, ${colors.accentOrange})`,
