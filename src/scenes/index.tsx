@@ -8,12 +8,11 @@ import { Logo } from '../brand/Logo';
 import { ImageScene } from './ImageScene';
 import type { BackgroundKind } from '../brand/backgrounds';
 
-
 /** A scene's chosen background, falling back to the default for its type. */
 const bgOf = (s: { background?: BackgroundKind }, fallback: BackgroundKind): BackgroundKind =>
   s.background ?? fallback;
 
-/** Staggered entrance: opacity fade + upward drift. */
+/** Staggered entrance: opacity fade + upward drift. Used for secondary copy. */
 const useEntrance = (delayFrames: number) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -24,16 +23,81 @@ const useEntrance = (delayFrames: number) => {
   };
 };
 
-const Eyebrow: React.FC<{ children: React.ReactNode; delay?: number }> = ({ children, delay = 0 }) => {
-  const anim = useEntrance(delay);
+/**
+ * One glyph that pops in: scale from small + slight rise. Everything is a
+ * deterministic function of (frame - delay); no Math.random(), so frames
+ * render identically across parallel brand workers.
+ */
+const PopChar: React.FC<{ ch: string; delay: number; rise: number }> = ({ ch, delay, rise }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const s = spring({ frame: frame - delay, fps, config: { damping: 11, mass: 0.55 } });
+  const scale = interpolate(s, [0, 1], [0.25, 1], { extrapolateRight: 'clamp' });
   return (
-    <div style={{ ...anim, fontFamily: monoFamily, fontSize: t.label,
-      letterSpacing: t.tracking.label, color: colors.accentBlue,
-      textTransform: 'uppercase', marginBottom: space.md }}>
-      {children}
-    </div>
+    <span
+      style={{
+        display: 'inline-block',
+        whiteSpace: 'pre',
+        transform: `translateY(${(1 - s) * rise}px) scale(${scale})`,
+        opacity: interpolate(s, [0, 0.32], [0, 1], { extrapolateRight: 'clamp' }),
+        willChange: 'opacity, transform',
+      }}
+    >
+      {ch}
+    </span>
   );
 };
+
+/**
+ * Kinetic text: pops glyphs (split='chars') or whole words (split='words')
+ * in on a cascading delay. Deterministic per-unit stagger derived from the
+ * string index — never wall-clock.
+ */
+const Kinetic: React.FC<{
+  text: string;
+  delay?: number;
+  stagger?: number;
+  rise?: number;
+  split?: 'chars' | 'words';
+  style?: React.CSSProperties;
+}> = ({ text, delay = 0, stagger = 4, rise = 26, split = 'chars', style }) => {
+  const words = text.split(' ');
+  let ci = 0; // running glyph index across the whole phrase for one cascade
+  return (
+    <span style={{ display: 'inline-flex', flexWrap: 'wrap', ...style }}>
+      {words.map((word, wi) => {
+        const units = split === 'chars' ? Array.from(word) : [word];
+        return (
+          <span key={wi} style={{ display: 'inline-flex', whiteSpace: 'nowrap' }}>
+            {units.map((unit, i) => {
+              // chars mode: continuous cascade across the phrase
+              const d = split === 'chars' ? delay + stagger * ci++ : delay + stagger * wi;
+              return <PopChar key={i} ch={unit} delay={d} rise={rise} />;
+            })}
+            {wi < words.length - 1 ? (
+              <span style={{ display: 'inline-block', width: '0.28em' }}>&nbsp;</span>
+            ) : null}
+          </span>
+        );
+      })}
+    </span>
+  );
+};
+
+const Eyebrow: React.FC<{ children: string; delay?: number }> = ({ children, delay = 0 }) => (
+  <div
+    style={{
+      fontFamily: monoFamily,
+      fontSize: t.label,
+      letterSpacing: t.tracking.label,
+      color: colors.accentBlue,
+      textTransform: 'uppercase',
+      marginBottom: space.md,
+    }}
+  >
+    <Kinetic text={children} delay={delay} stagger={3} rise={14} />
+  </div>
+);
 
 const Rule: React.FC<{ delay?: number }> = ({ delay = 0 }) => {
   const frame = useCurrentFrame();
@@ -46,25 +110,21 @@ const Rule: React.FC<{ delay?: number }> = ({ delay = 0 }) => {
   );
 };
 
-const TitleScene: React.FC<{ s: Extract<Scene, { kind: 'title' }> }> = ({ s }) => {
-  const head = useEntrance(6);
-  const sub = useEntrance(14);
-  return (
-    <Frame backdrop backdropOpacity={0.4} backgroundKind={bgOf(s, 'aurora')}>
-      {s.eyebrow ? <Eyebrow>{s.eyebrow}</Eyebrow> : null}
-      <div style={{ ...head, fontSize: t.hero, fontWeight: t.weight.bold,
-        letterSpacing: t.tracking.display, lineHeight: t.lineHeight.display }}>
-        {s.headline}
+const TitleScene: React.FC<{ s: Extract<Scene, { kind: 'title' }> }> = ({ s }) => (
+  <Frame backdrop backdropOpacity={0.4} backgroundKind={bgOf(s, 'aurora')}>
+    {s.eyebrow ? <Eyebrow>{s.eyebrow}</Eyebrow> : null}
+    <div style={{ fontSize: t.hero, fontWeight: t.weight.bold,
+      letterSpacing: t.tracking.display, lineHeight: t.lineHeight.display }}>
+      <Kinetic text={s.headline} delay={6} stagger={4} rise={36} />
+    </div>
+    {s.subhead ? (
+      <div style={{ fontSize: t.h3, color: colors.textMuted, marginTop: space.md }}>
+        <Kinetic text={s.subhead} delay={18} stagger={3} rise={12} split="words" />
       </div>
-      {s.subhead ? (
-        <div style={{ ...sub, fontSize: t.h3, color: colors.textMuted, marginTop: space.md }}>
-          {s.subhead}
-        </div>
-      ) : null}
-      <Rule delay={18} />
-    </Frame>
-  );
-};
+    ) : null}
+    <Rule delay={34} />
+  </Frame>
+);
 
 /**
  * Counts a numeric value up from zero, preserving any suffix or prefix.
@@ -85,21 +145,35 @@ const useCountUp = (value: string, delay: number, frames: number) => {
   return { text: prefix + shown + suffix, progress: p };
 };
 
+/** Big number that counts up AND slams in via an under-damped spring overshoot. */
+const StatValue: React.FC<{ s: Extract<Scene, { kind: 'stat' }> }> = ({ s }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const count = useCountUp(s.value, 6, 22);
+  const slam = spring({ frame: frame - 6, fps, config: { damping: 9, mass: 0.9 } });
+  return (
+    <div style={{
+      fontSize: 168, fontWeight: t.weight.bold, color: colors.accentBlue,
+      letterSpacing: t.tracking.display, lineHeight: 1, textAlign: 'center',
+      textShadow: glow(colors.accentBlue, 0.4 + 0.5* count.progress),
+      transform: `scale(${interpolate(slam, [0, 1], [2.4, 1], { extrapolateRight:'clamp'})}`,
+      transformOrigin: 'center center',
+      opacity: interpolate(slam, [0, 0.3], [0, 1], { extrapolateRight: 'clamp' }),
+    }}>
+          {count.text}
+        </div>
+      );
+    };
+
 const StatScene: React.FC<{ s: Extract<Scene, { kind: 'stat' }> }> = ({ s }) => {
-  const val = useEntrance(4);
-  const lab = useEntrance(12);
-  const count = useCountUp(s.value, 4, 26);
+  const lab = useEntrance(16);
   return (
     <Frame backdrop backgroundKind={bgOf(s, 'halo')}>
-      <div style={{ ...val, fontSize: 168, fontWeight: t.weight.bold,
-        color: colors.accentBlue, letterSpacing: t.tracking.display,
-        lineHeight: 1, textShadow: glow(colors.accentBlue, 0.4 + 0.5 * count.progress) }}>
-        {count.text}
-      </div>
-      <div style={{ ...lab, fontSize: t.h2, marginTop: space.md }}>{s.label}</div>
+      <StatValue s={s} />
+      <div style={{ ...lab, fontSize: t.h2, marginTop: space.md, textAlign: 'center' }}>{s.label}</div>
       {s.source ? (
         <div style={{ ...lab, fontFamily: monoFamily, fontSize: t.label,
-          color: colors.textMuted, marginTop: space.sm }}>
+          color: colors.textMuted, marginTop: space.sm, textAlign: 'center' }}>
           {s.source}
         </div>
       ) : null}
@@ -131,14 +205,20 @@ const Check: React.FC<{ color: string; delay: number }> = ({ color, delay }) => 
   );
 };
 
-/** Own component so useEntrance is a top-level hook, not a hook in a loop. */
+/** Own component so hooks are top-level, not in a loop. Kicks in with a slide+pop. */
 const BulletRow: React.FC<{ text: string; index: number }> = ({ text, index }) => {
-  const anim = useEntrance(8 + index * 9);
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const delay = 8 + index * 8;
+  const s = spring({ frame: frame - delay, fps, config: { damping: 12, mass: 0.6 } });
   const dot = index === 0 ? colors.accentOrange : colors.accentBlue;
   return (
-    <div style={{ ...anim, display: 'flex', alignItems: 'flex-start',
-      gap: space.md, marginBottom: space.lg }}>
-      <Check color={dot} delay={8 + index * 9} />
+    <div style={{
+      display: 'flex', alignItems: 'flex-start', gap: space.md, marginBottom: space.lg,
+      transform: `translateX(${(1 - s) * -20}px) scale(${1 - 0.12 * (1 - s)})`,
+      opacity: interpolate(s, [0, 0.32], [0, 1], { extrapolateRight: 'clamp' }),
+    }}>
+      <Check color={dot} delay={delay} />
       <div style={{ fontSize: t.h3, fontWeight: t.weight.medium }}>{text}</div>
     </div>
   );
@@ -154,8 +234,6 @@ const BulletsScene: React.FC<{ s: Extract<Scene, { kind: 'bullets' }> }> = ({ s 
 const OutroScene: React.FC<{ s: Extract<Scene, { kind: 'outro' }> }> = ({ s }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const anim = useEntrance(2);
-  const text = useEntrance(14);
 
   // Slight scale-up so the mark lands rather than simply appearing.
   const pop = spring({ frame: frame - 2, fps, config: { damping: 180 } });
@@ -164,16 +242,16 @@ const OutroScene: React.FC<{ s: Extract<Scene, { kind: 'outro' }> }> = ({ s }) =
   return (
     <Frame backdrop backdropOpacity={0.4} backgroundKind={bgOf(s, 'orb')}>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <div style={{ ...anim, transform: `${anim.transform} scale(${scale})` }}>
+        <div style={{ transform: `scale(${scale})`, opacity: interpolate(pop, [0, 0.35], [0, 1], { extrapolateRight: 'clamp' }) }}>
           <Logo scale={0.44} variant="mark" />
         </div>
         <div style={{ height: 4, width: 120, marginTop: space.md,
           background: `linear-gradient(90deg, ${colors.accentBlue}, ${colors.accentOrange})`,
           boxShadow: glow(colors.accentBlue, 0.4) }} />
         {s.message ? (
-          <div style={{ ...text, fontSize: t.h3, color: colors.textMuted,
+          <div style={{ fontSize: t.h3, color: colors.textMuted,
             marginTop: space.md, textAlign: 'center' }}>
-            {s.message}
+            <Kinetic text={s.message} delay={12} stagger={5} rise={20} />
           </div>
         ) : null}
       </div>
