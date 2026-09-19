@@ -26,7 +26,7 @@ export const RemotionRoot: React.FC = () => {
         // registered before any frame is rasterised.
         calculateMetadata={async ({ props }) => {
           await waitForFonts();
-          return { durationInFrames: totalFrames(props.scenes, FPS) };
+          return { durationInFrames: totalFrames(props.scenes, FPS, props.words) };
         }}
       />
       <Composition
@@ -40,7 +40,7 @@ export const RemotionRoot: React.FC = () => {
         height={formats.long.height}
         calculateMetadata={async ({ props }) => {
           await waitForFonts();
-          return { durationInFrames: totalFrames(props.scenes, FPS) };
+          return { durationInFrames: totalFrames(props.scenes, FPS, props.words) };
         }}
       />
     </>
