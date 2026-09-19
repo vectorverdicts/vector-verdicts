@@ -15,7 +15,10 @@ export const Frame: React.FC<{
   /** Constellation artwork behind the content. Off by default — it competes
    *  with dense text, so it suits title and outro rather than bullets. */
   backdrop?: boolean;
-}> = ({ children, padded = true, backdrop = false }) => {
+  /** Backdrop strength. Sparse scenes (title, outro) carry 0.4; dense ones
+   *  use less so the artwork does not compete with text being read. */
+  backdropOpacity?: number;
+}> = ({ children, padded = true, backdrop = false, backdropOpacity = 0.22 }) => {
   const { width, height } = useVideoConfig();
 
   // Derived from the SHORT edge (1080 in both formats) so vertical and
@@ -32,7 +35,7 @@ export const Frame: React.FC<{
         lineHeight: type.lineHeight.body,
       }}
     >
-      {backdrop ? <Backdrop opacity={0.4} /> : null}
+      {backdrop ? <Backdrop opacity={backdropOpacity} /> : null}
       <AbsoluteFill
         style={{
           padding: padded ? inset : 0,
