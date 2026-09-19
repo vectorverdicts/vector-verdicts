@@ -6,7 +6,7 @@ import { monoFamily } from '../brand/fonts';
 import type { Scene } from '../VideoRoot';
 import { Logo } from '../brand/Logo';
 import { ImageScene } from './ImageScene';
-import type { BackgroundKind } from '../brand/backgrounds';
+import { Background, type BackgroundKind } from '../brand/backgrounds';
 
 /** A scene's chosen background, falling back to the default for its type. */
 const bgOf = (s: { background?: BackgroundKind }, fallback: BackgroundKind): BackgroundKind =>
@@ -273,7 +273,9 @@ const SpecPill: React.FC<{ text: string; index: number }> = ({ text, index }) =>
 };
 
 const SpecsScene: React.FC<{ s: Extract<Scene, { kind: 'specs' }> }> = ({ s }) => (
-  <Frame backdrop backgroundKind={bgOf(s, 'aperture')}>
+  <Frame backgroundKind={bgOf(s, 'aperture')}>
+    {/* Render the aperture cleanly (no constellation/scrim stacking over it). */}
+    <Background kind={bgOf(s, 'aperture')} bg={colors.bg} />
     {s.heading ? <Eyebrow>{s.heading}</Eyebrow> : null}
     {s.items.map((item, i) => <SpecPill key={i} text={item} index={i} />)}
   </Frame>

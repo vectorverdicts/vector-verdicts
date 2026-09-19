@@ -124,16 +124,20 @@ const Mesh: React.FC<{ t: number }> = ({ t }) => {
 };
 
 /**
- * Camera lens iris: N dark blades framing a glowing aperture that slowly
- * opens and closes on a cycle — the "variable aperture" motif. Blade
- * geometry is derived from `t`, so it stays deterministic across frames.
+ * Full-screen camera aperture: a large iris anchored dead-center that slowly
+ * opens and closes across the ENTIRE frame (it never drifts around). A bright
+ * center window keeps foreground content readable while the blades sweep the
+ * screen edges — the "variable aperture" motif.
  */
 const Aperture: React.FC<{ t: number }> = ({ t }) => {
-  const N = 9;
-  const R = 100;                            // outer blade radius (viewBox units)
-  const open = 0.5 + 0.5 * Math.sin(t * 0.65); // 0..1 aperture position
-  const r = 18 + 66 * open;                 // central opening radius 18..84
-  const a0 = t * 7;                         // slow blade spin (deg)
+  const { width, height } = useVideoConfig();
+  const halfW = width * 0.6;           // overscan so blades reach corners
+  const halfH = height * 0.6;
+  const R = Math.hypot(halfW, halfH);  // blade radius reaching the corners
+  const N = 10;
+  const open = 0.5 + 0.5 * Math.sin(t * 0.5); // 0..1 slow open / close
+  const r = 460 + (R * 0.85 - 460) * open;    // central opening radius
+  const a0 = t * 2;                    // very slow in-place blade spin
   const span = 360 / N;
   const deg = (d: number) => (d * Math.PI) / 180;
   const pt = (rad: number, a: number) =>
@@ -142,39 +146,36 @@ const Aperture: React.FC<{ t: number }> = ({ t }) => {
   // One iris blade: outer arc, then two sides tapering to the aperture tip.
   const bladeD = (i: number) => {
     const a1 = a0 + i * span;
-    const a2 = a1 + span * 0.94;
-    const tipIn = span * 0.32;
-    const tip = r + (R - r) * 0.06;
+    const a2 = a1 + span * 0.93;
+    const tipIn = span * 0.3;
+    const tip = r + (R - r) * 0.05;
     return `M ${pt(R, a1)} L ${pt(R, a2)} L ${pt(tip, a2 - tipIn)} L ${pt(tip, a1 + tipIn)} Z`;
   };
 
   return (
-    <AbsoluteFill style={{ display: 'grid', placeItems: 'center', filter: 'blur(6px)' }}>
+    <AbsoluteFill style={{ display: 'grid', placeItems: 'center' }}>
+      {/* Bright central window the aperture reveals — keeps pills readable. */}
       <div style={{
-        width: '150%', aspectRatio: '1', position: 'relative',
-        display: 'grid', placeItems: 'center',
-      }}>
-        {/* Lens glow behind the blades — the aperture reveals it. */}
-        <div style={{
-          width: '100%', aspectRatio: '1', borderRadius: '50%',
-          background: `radial-gradient(circle at 50% 50%,` +
-            `rgba(255,255,255,0.95) 0%, rgba(${BLUE},0.9) 14%,` +
-            `rgba(${ORANGE},0.55) 34%, rgba(255,255,255,0) 62%)`,
-        }} />
-        {/* Diaphragm blades (dark) framing the aperture. */}
-        <svg viewBox="-120 -120 240 240" width="100%" height="100%" style={{ position: 'absolute' }}>
-          {Array.from({ length: N }, (_, i) => (
-            <path key={i} d={bladeD(i)} fill="rgba(6,9,16,0.94)"
-              stroke={`rgba(${BLUE},0.6)`} strokeWidth={1.4} />
-          ))}
-        </svg>
-        {/* Aperture opening outline / bright rim. */}
-        <div style={{
-          width: `${(r / R) * 100}%`, aspectRatio: '1', borderRadius: '50%',
-          boxShadow: `0 0 22px 6px rgba(${ORANGE},0.8)`,
-          background: `radial-gradient(circle at 50% 50%, rgba(255,255,255,0.9) 0%, rgba(${BLUE},0.7) 40%, rgba(255,255,255,0) 70%)`,
-        }} />
-      </div>
+        position: 'absolute', left: '50%', top: '50%',
+        width: `${(r / R) * 100}%`, aspectRatio: '1', borderRadius: '50%',
+        transform: 'translate(-50%,-50%)',
+        background: `radial-gradient(circle at 50% 50%, rgba(255,255,255,0.12) 0%,` +
+          `rgba(${BLUE},0.20) 32%, rgba(6,9,16,0) 72%)`,
+      }} />
+      <svg viewBox={`${-halfW} ${-halfH} ${halfW * 2} ${halfH * 2}`}
+        width="100%" height="100%">
+        {/* Diaphragm blades — dark navy with visible blue edges. */}
+        {Array.from({ length: N }, (_, i) => (
+          <path key={i} d={bladeD(i)} fill="rgba(8,13,25,0.94)"
+            stroke={`rgba(${BLUE},0.85)`} strokeWidth={2}
+            strokeLinejoin="round" />
+        ))}
+        {/* Aperture iris edge — an orange ring that visibly opens/closes. */}
+        <circle cx="0" cy="0" r={r} fill="none"
+          stroke={`rgba(${ORANGE},0.95)`} strokeWidth={3.5} />
+        <circle cx="0" cy="0" r={r} fill="none"
+          stroke={`rgba(${ORANGE},0.5)`} strokeWidth={9} opacity={0.4} />
+      </svg>
     </AbsoluteFill>
   );
 };
