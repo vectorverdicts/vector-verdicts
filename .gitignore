@@ -5,3 +5,16 @@ dist
 
 # Ignore the output video from Git but not videos you import into src/.
 out
+
+# Python venv for the transcription helper
+.venv/
+
+# Kokoro TTS model weights (337MB, fetched from GitHub releases)
+models/
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Generated per-episode props (rebuilt by transcribe.py)
+props/*.json
