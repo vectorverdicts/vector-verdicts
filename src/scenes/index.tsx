@@ -1,5 +1,5 @@
 import React from 'react';
-import { useCurrentFrame, useVideoConfig, spring, interpolate } from 'remotion';
+import { AbsoluteFill, Img, staticFile, useCurrentFrame, useVideoConfig, spring, interpolate } from 'remotion';
 import { Frame } from '../brand/Frame';
 import { colors, type as t, space, glow } from '../brand/tokens';
 import { monoFamily } from '../brand/fonts';
@@ -110,21 +110,35 @@ const Rule: React.FC<{ delay?: number }> = ({ delay = 0 }) => {
   );
 };
 
-const TitleScene: React.FC<{ s: Extract<Scene, { kind: 'title' }> }> = ({ s }) => (
-  <Frame backdrop backdropOpacity={0.4} backgroundKind={bgOf(s, 'aurora')}>
-    {s.eyebrow ? <Eyebrow>{s.eyebrow}</Eyebrow> : null}
-    <div style={{ fontSize: t.hero, fontWeight: t.weight.bold,
-      letterSpacing: t.tracking.display, lineHeight: t.lineHeight.display }}>
-      <Kinetic text={s.headline} delay={6} stagger={4} rise={36} />
-    </div>
-    {s.subhead ? (
-      <div style={{ fontSize: t.h3, color: colors.textMuted, marginTop: space.md }}>
-        <Kinetic text={s.subhead} delay={18} stagger={3} rise={12} split="words" />
+const TitleScene: React.FC<{ s: Extract<Scene, { kind: 'title' }> }> = ({ s }) => {
+  const photo = s.backgroundImage;
+  return (
+    <Frame backdrop={!photo} backdropOpacity={0.4}
+      backgroundKind={photo ? undefined : bgOf(s, 'aurora')}>
+      {photo ? (
+        <>
+          <Img src={staticFile(photo)} style={{
+            position: 'absolute', inset: 0, width: '100%', height: '100%',
+            objectFit: 'cover',
+          }} />
+          {/* Dim so the white headline stays legible over the render. */}
+          <AbsoluteFill style={{ backgroundColor: 'rgba(6,9,16,0.30)' }} />
+        </>
+      ) : null}
+      {s.eyebrow ? <Eyebrow>{s.eyebrow}</Eyebrow> : null}
+      <div style={{ fontSize: t.hero, fontWeight: t.weight.bold,
+        letterSpacing: t.tracking.display, lineHeight: t.lineHeight.display }}>
+        <Kinetic text={s.headline} delay={6} stagger={4} rise={36} />
       </div>
-    ) : null}
-    <Rule delay={34} />
-  </Frame>
-);
+      {s.subhead ? (
+        <div style={{ fontSize: t.h3, color: colors.textMuted, marginTop: space.md }}>
+          <Kinetic text={s.subhead} delay={18} stagger={3} rise={12} split="words" />
+        </div>
+      ) : null}
+      <Rule delay={34} />
+    </Frame>
+  );
+};
 
 /**
  * Counts a numeric value up from zero, preserving any suffix or prefix.
@@ -231,6 +245,40 @@ const BulletsScene: React.FC<{ s: Extract<Scene, { kind: 'bullets' }> }> = ({ s 
   </Frame>
 );
 
+/** Own component so hooks are top-level, not in a loop. Kicks in with a scale pop. */
+const SpecPill: React.FC<{ text: string; index: number }> = ({ text, index }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const delay = 6 + index * 7;
+  const s = spring({ frame: frame - delay, fps, config: { damping: 12, mass: 0.6 } });
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: space.sm,
+      background: 'rgba(20,28,42,0.88)', border: `1px solid ${colors.border}`,
+      borderRadius: 999, padding: `${space.sm}px ${space.lg}px`,
+      transform: `scale(${0.5 + 0.5 * (0.35 + 0.65 * s)})`,
+      opacity: interpolate(s, [0, 0.4], [0, 1], { extrapolateRight: 'clamp' }),
+    }}>
+      <span style={{
+        width: 24, height: 24, borderRadius: 12, flexShrink: 0,
+        background: colors.surface, color: colors.accentBlue,
+        fontSize: 20, fontWeight: t.weight.bold, lineHeight: 1,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>+</span>
+      <span style={{ fontSize: t.h3, fontWeight: t.weight.medium, color: colors.white }}>
+        {text}
+      </span>
+    </div>
+  );
+};
+
+const SpecsScene: React.FC<{ s: Extract<Scene, { kind: 'specs' }> }> = ({ s }) => (
+  <Frame backdrop backgroundKind={bgOf(s, 'aperture')}>
+    {s.heading ? <Eyebrow>{s.heading}</Eyebrow> : null}
+    {s.items.map((item, i) => <SpecPill key={i} text={item} index={i} />)}
+  </Frame>
+);
+
 const OutroScene: React.FC<{ s: Extract<Scene, { kind: 'outro' }> }> = ({ s }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -264,6 +312,7 @@ export const SceneRenderer: React.FC<{ scene: Scene }> = ({ scene }) => {
     case 'title': return <TitleScene s={scene} />;
     case 'stat': return <StatScene s={scene} />;
     case 'bullets': return <BulletsScene s={scene} />;
+    case 'specs': return <SpecsScene s={scene} />;
     case 'image': return <ImageScene s={scene} />;
     case 'outro': return <OutroScene s={scene} />;
   }

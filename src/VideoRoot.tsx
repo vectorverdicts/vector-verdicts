@@ -14,8 +14,10 @@ const sceneSchema = z.discriminatedUnion('kind', [
     seconds: z.number().positive(),
     narration: z.string().optional(),
     /** Animated background for this scene. Defaults per scene type. */
-    background: z.enum(['aurora','orb','halo','wave','mesh']).optional(),
+    background: z.enum(['aurora','orb','halo','wave','mesh','aperture']).optional(),
     eyebrow: z.string().optional(),
+    /** Full-bleed background image (public/ path) rendered behind title text. */
+    backgroundImage: z.string().optional(),
     headline: z.string(),
     subhead: z.string().optional(),
   }),
@@ -24,7 +26,7 @@ const sceneSchema = z.discriminatedUnion('kind', [
     seconds: z.number().positive(),
     narration: z.string().optional(),
     /** Animated background for this scene. Defaults per scene type. */
-    background: z.enum(['aurora','orb','halo','wave','mesh']).optional(),
+    background: z.enum(['aurora','orb','halo','wave','mesh','aperture']).optional(),
     value: z.string(),
     label: z.string(),
     source: z.string().optional(),
@@ -34,7 +36,7 @@ const sceneSchema = z.discriminatedUnion('kind', [
     seconds: z.number().positive(),
     narration: z.string().optional(),
     /** Animated background for this scene. Defaults per scene type. */
-    background: z.enum(['aurora','orb','halo','wave','mesh']).optional(),
+    background: z.enum(['aurora','orb','halo','wave','mesh','aperture']).optional(),
     heading: z.string().optional(),
     items: z.array(z.string()).min(1).max(5),
   }),
@@ -43,7 +45,7 @@ const sceneSchema = z.discriminatedUnion('kind', [
     seconds: z.number().positive(),
     narration: z.string().optional(),
     /** Animated background for this scene. Defaults per scene type. */
-    background: z.enum(['aurora','orb','halo','wave','mesh']).optional(),
+    background: z.enum(['aurora','orb','halo','wave','mesh','aperture']).optional(),
     /** Path relative to public/, e.g. "images/ep002-benchmark.png". */
     src: z.string(),
     caption: z.string().optional(),
@@ -52,11 +54,21 @@ const sceneSchema = z.discriminatedUnion('kind', [
     fit: z.enum(['contain', 'cover']).optional(),
   }),
   z.object({
+    kind: z.literal('specs'),
+    seconds: z.number().positive(),
+    narration: z.string().optional(),
+    /** Animated background for this scene (aperture suits the camera talk). */
+    background: z.enum(['aurora','orb','halo','wave','mesh','aperture']).optional(),
+    heading: z.string().optional(),
+    /** Feature pills, like "2nm A20 Pro chip". Up to 8. */
+    items: z.array(z.string()).min(1).max(8),
+  }),
+  z.object({
     kind: z.literal('outro'),
     seconds: z.number().positive(),
     narration: z.string().optional(),
     /** Animated background for this scene. Defaults per scene type. */
-    background: z.enum(['aurora','orb','halo','wave','mesh']).optional(),
+    background: z.enum(['aurora','orb','halo','wave','mesh','aperture']).optional(),
     message: z.string(),
   }),
 ]);

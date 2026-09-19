@@ -9,7 +9,7 @@ import { AbsoluteFill, useCurrentFrame, useVideoConfig } from 'remotion';
  * Every value is computed from the current frame instead.
  */
 
-export type BackgroundKind = 'aurora' | 'orb' | 'halo' | 'wave' | 'mesh';
+export type BackgroundKind = 'aurora' | 'orb' | 'halo' | 'wave' | 'mesh' | 'aperture';
 
 const BLUE = '16,192,254';
 const ORANGE = '255,88,35';
@@ -105,11 +105,11 @@ const Mesh: React.FC<{ t: number }> = ({ t }) => {
   return (
     <AbsoluteFill style={{ filter: 'blur(18px)' }}>
       {blobs.map((b, i) => {
-        const p = (t / b.period) * Math.PI * 2 * b.dir;
+        const { rgb, a, period, dir, ...pos } = b;
+        const p = (t / period) * Math.PI * 2 * dir;
         const x = 11 * Math.sin(p);
         const y = -9 * Math.cos(p);
         const sc = 1 + 0.13 * Math.sin(p + i);
-        const { rgb, a, period, dir, ...pos } = b;
         return (
           <div key={i} style={{
             position: 'absolute', width: '62%', aspectRatio: '1',
@@ -123,6 +123,62 @@ const Mesh: React.FC<{ t: number }> = ({ t }) => {
   );
 };
 
+/**
+ * Camera lens iris: N dark blades framing a glowing aperture that slowly
+ * opens and closes on a cycle — the "variable aperture" motif. Blade
+ * geometry is derived from `t`, so it stays deterministic across frames.
+ */
+const Aperture: React.FC<{ t: number }> = ({ t }) => {
+  const N = 9;
+  const R = 100;                            // outer blade radius (viewBox units)
+  const open = 0.5 + 0.5 * Math.sin(t * 0.65); // 0..1 aperture position
+  const r = 18 + 66 * open;                 // central opening radius 18..84
+  const a0 = t * 7;                         // slow blade spin (deg)
+  const span = 360 / N;
+  const deg = (d: number) => (d * Math.PI) / 180;
+  const pt = (rad: number, a: number) =>
+    `${(rad * Math.cos(deg(a))).toFixed(1)} ${(rad * Math.sin(deg(a))).toFixed(1)}`;
+
+  // One iris blade: outer arc, then two sides tapering to the aperture tip.
+  const bladeD = (i: number) => {
+    const a1 = a0 + i * span;
+    const a2 = a1 + span * 0.94;
+    const tipIn = span * 0.32;
+    const tip = r + (R - r) * 0.06;
+    return `M ${pt(R, a1)} L ${pt(R, a2)} L ${pt(tip, a2 - tipIn)} L ${pt(tip, a1 + tipIn)} Z`;
+  };
+
+  return (
+    <AbsoluteFill style={{ display: 'grid', placeItems: 'center', filter: 'blur(6px)' }}>
+      <div style={{
+        width: '150%', aspectRatio: '1', position: 'relative',
+        display: 'grid', placeItems: 'center',
+      }}>
+        {/* Lens glow behind the blades — the aperture reveals it. */}
+        <div style={{
+          width: '100%', aspectRatio: '1', borderRadius: '50%',
+          background: `radial-gradient(circle at 50% 50%,` +
+            `rgba(255,255,255,0.95) 0%, rgba(${BLUE},0.9) 14%,` +
+            `rgba(${ORANGE},0.55) 34%, rgba(255,255,255,0) 62%)`,
+        }} />
+        {/* Diaphragm blades (dark) framing the aperture. */}
+        <svg viewBox="-120 -120 240 240" width="100%" height="100%" style={{ position: 'absolute' }}>
+          {Array.from({ length: N }, (_, i) => (
+            <path key={i} d={bladeD(i)} fill="rgba(6,9,16,0.94)"
+              stroke={`rgba(${BLUE},0.6)`} strokeWidth={1.4} />
+          ))}
+        </svg>
+        {/* Aperture opening outline / bright rim. */}
+        <div style={{
+          width: `${(r / R) * 100}%`, aspectRatio: '1', borderRadius: '50%',
+          boxShadow: `0 0 22px 6px rgba(${ORANGE},0.8)`,
+          background: `radial-gradient(circle at 50% 50%, rgba(255,255,255,0.9) 0%, rgba(${BLUE},0.7) 40%, rgba(255,255,255,0) 70%)`,
+        }} />
+      </div>
+    </AbsoluteFill>
+  );
+};
+
 export const Background: React.FC<{ kind: BackgroundKind; bg: string }> = ({ kind, bg }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -132,6 +188,7 @@ export const Background: React.FC<{ kind: BackgroundKind; bg: string }> = ({ kin
     case 'halo': return <Halo t={t} bg={bg} />;
     case 'wave': return <Wave t={t} />;
     case 'mesh': return <Mesh t={t} />;
+    case 'aperture': return <Aperture t={t} />;
     case 'aurora':
     default: return <Aurora t={t} />;
   }
