@@ -18,3 +18,6 @@ __pycache__/
 
 # Generated per-episode props (rebuilt by transcribe.py)
 props/*.json
+
+# Generated narration audio (rebuilt by narrate.py)
+public/audio/
