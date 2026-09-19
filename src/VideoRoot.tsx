@@ -1,9 +1,8 @@
 import React from 'react';
 import { AbsoluteFill, Sequence, useVideoConfig } from 'remotion';
 import { z } from 'zod';
-import { Frame } from './brand/Frame';
-import { colors, type as t, space } from './brand/tokens';
-import { monoFamily } from './brand/fonts';
+import { colors } from './brand/tokens';
+import { SceneRenderer } from './scenes';
 
 /** Each scene carries `kind`; TypeScript and Zod both narrow on it. */
 const sceneSchema = z.discriminatedUnion('kind', [
@@ -55,28 +54,6 @@ export const defaultVideoProps: VideoProps = {
   ],
 };
 
-/** Placeholder renderer — replaced by real scene components next. */
-const SceneBody: React.FC<{ scene: Scene }> = ({ scene }) => {
-  const heading =
-    scene.kind === 'title' ? scene.headline
-    : scene.kind === 'stat' ? scene.value
-    : scene.kind === 'bullets' ? (scene.heading ?? 'Points')
-    : scene.message;
-
-  return (
-    <Frame>
-      <div style={{ fontFamily: monoFamily, fontSize: t.label,
-        letterSpacing: t.tracking.label, color: colors.accentBlue,
-        marginBottom: space.md }}>
-        {scene.kind.toUpperCase()}
-      </div>
-      <div style={{ fontSize: t.h1, fontWeight: t.weight.bold,
-        letterSpacing: t.tracking.display, lineHeight: t.lineHeight.display }}>
-        {heading}
-      </div>
-    </Frame>
-  );
-};
 
 export const VideoRoot: React.FC<VideoProps> = ({ scenes }) => {
   const { fps } = useVideoConfig();
@@ -90,7 +67,7 @@ export const VideoRoot: React.FC<VideoProps> = ({ scenes }) => {
         cursor += dur;
         return (
           <Sequence key={i} from={from} durationInFrames={dur}>
-            <SceneBody scene={scene} />
+            <SceneRenderer scene={scene} />
           </Sequence>
         );
       })}
