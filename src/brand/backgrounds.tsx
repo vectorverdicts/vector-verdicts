@@ -135,9 +135,9 @@ const Aperture: React.FC<{ t: number }> = ({ t }) => {
   const halfH = height * 0.6;
   const R = Math.hypot(halfW, halfH);  // blade radius reaching the corners
   const N = 10;
-  const open = 0.5 + 0.5 * Math.sin(t * 0.5); // 0..1 slow open / close
-  const r = 460 + (R * 0.85 - 460) * open;    // central opening radius
-  const a0 = t * 2;                    // very slow in-place blade spin
+  const open = 0.5 + 0.5 * Math.sin(t * 0.42); // 0..1 slow open / close
+  const r = Math.max(4, (R * 0.82) * open);    // central opening radius (full close→open)
+  const a0 = 0;                    // STATIC orientation — blades never rotate/drift
   const span = 360 / N;
   const deg = (d: number) => (d * Math.PI) / 180;
   const pt = (rad: number, a: number) =>

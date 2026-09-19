@@ -245,29 +245,13 @@ const BulletsScene: React.FC<{ s: Extract<Scene, { kind: 'bullets' }> }> = ({ s 
   </Frame>
 );
 
-/** Own component so hooks are top-level, not in a loop. Kicks in with a scale pop. */
-const SpecPill: React.FC<{ text: string; index: number }> = ({ text, index }) => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const delay = 6 + index * 7;
-  const s = spring({ frame: frame - delay, fps, config: { damping: 12, mass: 0.6 } });
+/** A plain Vector Verdicts text line — no pill box. Staggered entrance. */
+const SpecLine: React.FC<{ text: string; index: number }> = ({ text, index }) => {
+  const anim = useEntrance(6 + index * 6);
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: space.sm,
-      background: 'rgba(20,28,42,0.88)', border: `1px solid ${colors.border}`,
-      borderRadius: 999, padding: `${space.sm}px ${space.lg}px`,
-      transform: `scale(${0.5 + 0.5 * (0.35 + 0.65 * s)})`,
-      opacity: interpolate(s, [0, 0.4], [0, 1], { extrapolateRight: 'clamp' }),
-    }}>
-      <span style={{
-        width: 24, height: 24, borderRadius: 12, flexShrink: 0,
-        background: colors.surface, color: colors.accentBlue,
-        fontSize: 20, fontWeight: t.weight.bold, lineHeight: 1,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>+</span>
-      <span style={{ fontSize: t.h3, fontWeight: t.weight.medium, color: colors.white }}>
-        {text}
-      </span>
+    <div style={{ ...anim, fontSize: t.h3, fontWeight: t.weight.medium, color: colors.white,
+      lineHeight: t.lineHeight.body, marginBottom: space.xs }}>
+      {text}
     </div>
   );
 };
@@ -277,7 +261,7 @@ const SpecsScene: React.FC<{ s: Extract<Scene, { kind: 'specs' }> }> = ({ s }) =
     {/* Render the aperture cleanly (no constellation/scrim stacking over it). */}
     <Background kind={bgOf(s, 'aperture')} bg={colors.bg} />
     {s.heading ? <Eyebrow>{s.heading}</Eyebrow> : null}
-    {s.items.map((item, i) => <SpecPill key={i} text={item} index={i} />)}
+    {s.items.map((item, i) => <SpecLine key={i} text={item} index={i} />)}
   </Frame>
 );
 
