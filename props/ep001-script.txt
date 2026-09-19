@@ -1,0 +1,1 @@
+Google just shipped Gemini three point eight Flash, and the benchmarks are loud. It runs two point four times faster than the model it replaces. Three things actually matter here. It is cheaper per token, the context window is longer, and tool use still lags behind. That is the verdict. Vector Verdicts.
