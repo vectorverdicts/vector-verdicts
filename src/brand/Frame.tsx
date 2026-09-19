@@ -3,6 +3,7 @@ import { AbsoluteFill, useVideoConfig } from 'remotion';
 import { colors, CLEAR_SPACE_RATIO, type } from './tokens';
 import { interFamily } from './fonts';
 import { Backdrop } from './Backdrop';
+import type { BackgroundKind } from './backgrounds';
 
 /**
  * The shell every scene renders inside: canvas colour, safe-area insets,
@@ -18,7 +19,10 @@ export const Frame: React.FC<{
   /** Backdrop strength. Sparse scenes (title, outro) carry 0.4; dense ones
    *  use less so the artwork does not compete with text being read. */
   backdropOpacity?: number;
-}> = ({ children, padded = true, backdrop = false, backdropOpacity = 0.22 }) => {
+  /** Which animated background sits behind the content. */
+  backgroundKind?: BackgroundKind;
+}> = ({ children, padded = true, backdrop = false, backdropOpacity = 0.22,
+        backgroundKind = 'aurora' }) => {
   const { width, height } = useVideoConfig();
 
   // Derived from the SHORT edge (1080 in both formats) so vertical and
@@ -35,7 +39,7 @@ export const Frame: React.FC<{
         lineHeight: type.lineHeight.body,
       }}
     >
-      {backdrop ? <Backdrop opacity={backdropOpacity} /> : null}
+      {backdrop ? <Backdrop opacity={backdropOpacity} kind={backgroundKind} /> : null}
       <AbsoluteFill
         style={{
           padding: padded ? inset : 0,

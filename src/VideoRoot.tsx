@@ -13,6 +13,8 @@ const sceneSchema = z.discriminatedUnion('kind', [
     kind: z.literal('title'),
     seconds: z.number().positive(),
     narration: z.string().optional(),
+    /** Animated background for this scene. Defaults per scene type. */
+    background: z.enum(['aurora','orb','halo','wave','mesh']).optional(),
     eyebrow: z.string().optional(),
     headline: z.string(),
     subhead: z.string().optional(),
@@ -21,6 +23,8 @@ const sceneSchema = z.discriminatedUnion('kind', [
     kind: z.literal('stat'),
     seconds: z.number().positive(),
     narration: z.string().optional(),
+    /** Animated background for this scene. Defaults per scene type. */
+    background: z.enum(['aurora','orb','halo','wave','mesh']).optional(),
     value: z.string(),
     label: z.string(),
     source: z.string().optional(),
@@ -29,6 +33,8 @@ const sceneSchema = z.discriminatedUnion('kind', [
     kind: z.literal('bullets'),
     seconds: z.number().positive(),
     narration: z.string().optional(),
+    /** Animated background for this scene. Defaults per scene type. */
+    background: z.enum(['aurora','orb','halo','wave','mesh']).optional(),
     heading: z.string().optional(),
     items: z.array(z.string()).min(1).max(5),
   }),
@@ -36,6 +42,8 @@ const sceneSchema = z.discriminatedUnion('kind', [
     kind: z.literal('image'),
     seconds: z.number().positive(),
     narration: z.string().optional(),
+    /** Animated background for this scene. Defaults per scene type. */
+    background: z.enum(['aurora','orb','halo','wave','mesh']).optional(),
     /** Path relative to public/, e.g. "images/ep002-benchmark.png". */
     src: z.string(),
     caption: z.string().optional(),
@@ -47,6 +55,8 @@ const sceneSchema = z.discriminatedUnion('kind', [
     kind: z.literal('outro'),
     seconds: z.number().positive(),
     narration: z.string().optional(),
+    /** Animated background for this scene. Defaults per scene type. */
+    background: z.enum(['aurora','orb','halo','wave','mesh']).optional(),
     message: z.string(),
   }),
 ]);

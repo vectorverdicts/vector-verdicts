@@ -6,6 +6,12 @@ import { monoFamily } from '../brand/fonts';
 import type { Scene } from '../VideoRoot';
 import { Logo } from '../brand/Logo';
 import { ImageScene } from './ImageScene';
+import type { BackgroundKind } from '../brand/backgrounds';
+
+
+/** A scene's chosen background, falling back to the default for its type. */
+const bgOf = (s: { background?: BackgroundKind }, fallback: BackgroundKind): BackgroundKind =>
+  s.background ?? fallback;
 
 /** Staggered entrance: opacity fade + upward drift. */
 const useEntrance = (delayFrames: number) => {
@@ -44,7 +50,7 @@ const TitleScene: React.FC<{ s: Extract<Scene, { kind: 'title' }> }> = ({ s }) =
   const head = useEntrance(6);
   const sub = useEntrance(14);
   return (
-    <Frame backdrop backdropOpacity={0.4}>
+    <Frame backdrop backdropOpacity={0.4} backgroundKind={bgOf(s, 'aurora')}>
       {s.eyebrow ? <Eyebrow>{s.eyebrow}</Eyebrow> : null}
       <div style={{ ...head, fontSize: t.hero, fontWeight: t.weight.bold,
         letterSpacing: t.tracking.display, lineHeight: t.lineHeight.display }}>
@@ -64,7 +70,7 @@ const StatScene: React.FC<{ s: Extract<Scene, { kind: 'stat' }> }> = ({ s }) => 
   const val = useEntrance(4);
   const lab = useEntrance(12);
   return (
-    <Frame backdrop>
+    <Frame backdrop backgroundKind={bgOf(s, 'halo')}>
       <div style={{ ...val, fontSize: 168, fontWeight: t.weight.bold,
         color: colors.accentBlue, letterSpacing: t.tracking.display,
         lineHeight: 1, textShadow: glow(colors.accentBlue, 0.6) }}>
@@ -96,7 +102,7 @@ const BulletRow: React.FC<{ text: string; index: number }> = ({ text, index }) =
 };
 
 const BulletsScene: React.FC<{ s: Extract<Scene, { kind: 'bullets' }> }> = ({ s }) => (
-  <Frame backdrop>
+  <Frame backdrop backgroundKind={bgOf(s, 'wave')}>
     {s.heading ? <Eyebrow>{s.heading}</Eyebrow> : null}
     {s.items.map((item, i) => <BulletRow key={i} text={item} index={i} />)}
   </Frame>
@@ -113,7 +119,7 @@ const OutroScene: React.FC<{ s: Extract<Scene, { kind: 'outro' }> }> = ({ s }) =
   const scale = interpolate(pop, [0, 1], [0.86, 1], { extrapolateRight: 'clamp' });
 
   return (
-    <Frame backdrop backdropOpacity={0.4}>
+    <Frame backdrop backdropOpacity={0.4} backgroundKind={bgOf(s, 'orb')}>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <div style={{ ...anim, transform: `${anim.transform} scale(${scale})` }}>
           <Logo scale={0.44} variant="mark" />
