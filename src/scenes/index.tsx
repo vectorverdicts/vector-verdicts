@@ -4,6 +4,7 @@ import { Frame } from '../brand/Frame';
 import { colors, type as t, space, glow } from '../brand/tokens';
 import { monoFamily } from '../brand/fonts';
 import type { Scene } from '../VideoRoot';
+import { Logo } from '../brand/Logo';
 
 /** Staggered entrance: opacity fade + upward drift. */
 const useEntrance = (delayFrames: number) => {
@@ -101,17 +102,30 @@ const BulletsScene: React.FC<{ s: Extract<Scene, { kind: 'bullets' }> }> = ({ s 
 );
 
 const OutroScene: React.FC<{ s: Extract<Scene, { kind: 'outro' }> }> = ({ s }) => {
-  const anim = useEntrance(4);
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const anim = useEntrance(2);
+  const text = useEntrance(14);
+
+  // Slight scale-up so the mark lands rather than simply appearing.
+  const pop = spring({ frame: frame - 2, fps, config: { damping: 180 } });
+  const scale = interpolate(pop, [0, 1], [0.86, 1], { extrapolateRight: 'clamp' });
+
   return (
     <Frame>
-      <div style={{ ...anim, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <div style={{ fontSize: t.h1, fontWeight: t.weight.bold,
-          letterSpacing: t.tracking.display, textAlign: 'center' }}>
-          {s.message}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div style={{ ...anim, transform: `${anim.transform} scale(${scale})` }}>
+          <Logo scale={0.5} />
         </div>
-        <div style={{ height: 4, width: 120, marginTop: space.lg,
+        <div style={{ height: 4, width: 120, marginTop: space.md,
           background: `linear-gradient(90deg, ${colors.accentBlue}, ${colors.accentOrange})`,
           boxShadow: glow(colors.accentBlue, 0.4) }} />
+        {s.message ? (
+          <div style={{ ...text, fontSize: t.h3, color: colors.textMuted,
+            marginTop: space.md, textAlign: 'center' }}>
+            {s.message}
+          </div>
+        ) : null}
       </div>
     </Frame>
   );
