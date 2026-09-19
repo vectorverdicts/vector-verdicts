@@ -2,12 +2,14 @@ import React from 'react';
 import { Composition } from 'remotion';
 import { formats } from './brand/tokens';
 import { waitForFonts } from './brand/fonts';
-import { VideoRoot, videoSchema, defaultVideoProps } from './VideoRoot';
+import { VideoRoot, videoSchema, defaultVideoProps, totalFrames } from './VideoRoot';
 
 /**
  * Both formats render the SAME component tree. Only the dimensions differ.
  * Scenes adapt via useVideoConfig() rather than branching on format.
  */
+const FPS = formats.short.fps;
+
 export const RemotionRoot: React.FC = () => {
   return (
     <>
@@ -22,9 +24,9 @@ export const RemotionRoot: React.FC = () => {
         height={formats.short.height}
         // Runs before render; Remotion awaits it. Fonts are guaranteed
         // registered before any frame is rasterised.
-        calculateMetadata={async () => {
+        calculateMetadata={async ({ props }) => {
           await waitForFonts();
-          return {};
+          return { durationInFrames: totalFrames(props.scenes, FPS) };
         }}
       />
       <Composition
@@ -36,9 +38,9 @@ export const RemotionRoot: React.FC = () => {
         fps={formats.long.fps}
         width={formats.long.width}
         height={formats.long.height}
-        calculateMetadata={async () => {
+        calculateMetadata={async ({ props }) => {
           await waitForFonts();
-          return {};
+          return { durationInFrames: totalFrames(props.scenes, FPS) };
         }}
       />
     </>

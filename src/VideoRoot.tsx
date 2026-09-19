@@ -97,3 +97,11 @@ export const VideoRoot: React.FC<VideoProps> = ({ scenes }) => {
     </AbsoluteFill>
   );
 };
+
+/**
+ * Total length of a scene list, in frames.
+ * Rounds PER SCENE, matching VideoRoot's Sequence maths exactly — summing
+ * seconds and rounding once would drift by a frame on fractional durations.
+ */
+export const totalFrames = (scenes: Scene[], fps: number): number =>
+  scenes.reduce((sum, s) => sum + Math.round(s.seconds * fps), 0);
