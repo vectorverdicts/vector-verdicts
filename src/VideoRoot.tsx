@@ -33,6 +33,17 @@ const sceneSchema = z.discriminatedUnion('kind', [
     items: z.array(z.string()).min(1).max(5),
   }),
   z.object({
+    kind: z.literal('image'),
+    seconds: z.number().positive(),
+    narration: z.string().optional(),
+    /** Path relative to public/, e.g. "images/ep002-benchmark.png". */
+    src: z.string(),
+    caption: z.string().optional(),
+    /** 'contain' shows the whole image (right for screenshots and charts);
+     *  'cover' crops to fill the frame (right for photos and textures). */
+    fit: z.enum(['contain', 'cover']).optional(),
+  }),
+  z.object({
     kind: z.literal('outro'),
     seconds: z.number().positive(),
     narration: z.string().optional(),

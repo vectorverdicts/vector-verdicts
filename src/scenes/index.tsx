@@ -5,6 +5,7 @@ import { colors, type as t, space, glow } from '../brand/tokens';
 import { monoFamily } from '../brand/fonts';
 import type { Scene } from '../VideoRoot';
 import { Logo } from '../brand/Logo';
+import { ImageScene } from './ImageScene';
 
 /** Staggered entrance: opacity fade + upward drift. */
 const useEntrance = (delayFrames: number) => {
@@ -136,6 +137,7 @@ export const SceneRenderer: React.FC<{ scene: Scene }> = ({ scene }) => {
     case 'title': return <TitleScene s={scene} />;
     case 'stat': return <StatScene s={scene} />;
     case 'bullets': return <BulletsScene s={scene} />;
+    case 'image': return <ImageScene s={scene} />;
     case 'outro': return <OutroScene s={scene} />;
   }
 };

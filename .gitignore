@@ -21,3 +21,6 @@ props/*.json
 
 # Generated narration audio (rebuilt by narrate.py)
 public/audio/
+
+# Per-episode images (supplied alongside the script)
+public/images/
