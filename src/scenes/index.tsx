@@ -96,7 +96,7 @@ const BulletRow: React.FC<{ text: string; index: number }> = ({ text, index }) =
 };
 
 const BulletsScene: React.FC<{ s: Extract<Scene, { kind: 'bullets' }> }> = ({ s }) => (
-  <Frame>
+  <Frame backdrop>
     {s.heading ? <Eyebrow>{s.heading}</Eyebrow> : null}
     {s.items.map((item, i) => <BulletRow key={i} text={item} index={i} />)}
   </Frame>
