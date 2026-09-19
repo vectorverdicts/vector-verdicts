@@ -31,6 +31,15 @@ for f in "$PROPS" "$AUDIO"; do
   [[ -f "$f" ]] || { echo "ERROR: missing $f" >&2; exit 1; }
 done
 [[ -d "$NAS" ]] || { echo "ERROR: NAS not mounted at $NAS" >&2; exit 1; }
+
+# Only committed work reaches ONYX — the push carries commits, not the working
+# tree. Without this check the script succeeds while rendering stale code.
+if ! git diff --quiet HEAD -- src public; then
+  echo "ERROR: uncommitted changes in src/ or public/ — commit first, or the" >&2
+  echo "       render will use the last committed version." >&2
+  git status --short -- src public >&2
+  exit 1
+fi
 echo "    $PROPS, $AUDIO present"
 
 echo "==> deploying code"
